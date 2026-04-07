@@ -55,6 +55,21 @@ def _contact_dict(state: JourneyState) -> dict[str, Any]:
 # Node functions
 # ---------------------------------------------------------------------------
 
+def route_entry(state: JourneyState) -> dict[str, Any]:
+    """Entry-point pass-through node.
+
+    This node does not modify state.  It exists solely as a stable entry
+    point whose outgoing conditional edge decides whether to send a
+    welcome email (day 1) or jump straight to engagement evaluation
+    (subsequent touchpoints).
+    """
+    log.info(
+        "[Day %d] route_entry  contact=%s  touchpoints=%d",
+        state["day"], state["contact_id"], state["touchpoints_sent"],
+    )
+    return {}
+
+
 def evaluate_engagement(state: JourneyState) -> dict[str, Any]:
     """Fetch engagement signals and update the engagement score.
 

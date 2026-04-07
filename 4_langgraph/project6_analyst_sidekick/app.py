@@ -6,25 +6,14 @@
 
 """Gradio chat interface for the MarTech Analyst Sidekick.
 
-Provides a conversational UI where the user can ask marketing analytics
-questions.  The agent's tool calls are shown in real time as collapsible
-status updates so the user can see which data sources are being queried.
+Conversational UI with real-time tool call visibility.  Run: ``python app.py``
 
-Launch with::
-
-    python app.py
-    # or
-    gradio app.py
-
-Environment variables consumed (via .env):
-    OPENAI_API_KEY  - Required for the ChatOpenAI LLM
-    USE_MOCK        - "true" (default) or "false" for tool backends
-    GRADIO_SERVER_PORT - Port to serve on (default 7860)
+Environment variables: OPENAI_API_KEY (required), USE_MOCK (default "true"),
+GRADIO_SERVER_PORT (default 7860).
 """
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import uuid
@@ -68,37 +57,17 @@ EXAMPLE_QUERIES: list[str] = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Session management
-# ---------------------------------------------------------------------------
-
 def _new_thread_id() -> str:
     """Generate a unique thread ID for conversation memory."""
     return f"gradio-{uuid.uuid4().hex[:12]}"
 
-
-# ---------------------------------------------------------------------------
-# Chat handler
-# ---------------------------------------------------------------------------
 
 def chat_handler(
     user_message: str,
     history: list[dict[str, str]],
     thread_id: str,
 ) -> Generator[tuple[list[dict[str, str]], str], None, None]:
-    """Process a user message through the LangGraph agent with streaming.
-
-    Yields updated chat history progressively as tool calls execute and
-    the final response is generated.
-
-    Args:
-        user_message: The user's input text.
-        history:      Gradio chat history (list of role/content dicts).
-        thread_id:    Conversation thread ID for memory persistence.
-
-    Yields:
-        Tuple of (updated_history, thread_id) for Gradio state updates.
-    """
+    """Stream agent responses, yielding (updated_history, thread_id) tuples."""
     if not user_message.strip():
         yield history, thread_id
         return
@@ -196,10 +165,6 @@ def _build_tool_status(tool_calls: list[str], in_progress: bool = True) -> str:
     return f"{header}\n{items}"
 
 
-# ---------------------------------------------------------------------------
-# Gradio UI
-# ---------------------------------------------------------------------------
-
 def build_ui() -> gr.Blocks:
     """Construct the Gradio Blocks interface.
 
@@ -265,30 +230,13 @@ def build_ui() -> gr.Blocks:
             clear_btn = gr.Button("Clear conversation", variant="secondary", size="sm")
             new_session_btn = gr.Button("New session", variant="secondary", size="sm")
 
-        # Info accordion
         with gr.Accordion("About this agent", open=False):
             gr.Markdown(
-                """
-                ## Available Tools
-
-                | Tool | Description |
-                |------|-------------|
-                | **Amplitude Funnels** | Query funnel conversion data (signup, trial, lead funnels) |
-                | **Google Analytics** | Sessions, revenue, conversion rates, CAC, email metrics |
-                | **Python REPL** | Run pandas/numpy analysis and calculations |
-                | **Web Search** | Latest marketing news, benchmarks, and trends |
-                | **Chart Generator** | Create bar, line, pie, and horizontal bar charts |
-
-                ## How it works
-                The agent uses a **ReAct** (Reasoning + Acting) loop:
-                1. Reads your question and decides which tools to call
-                2. Calls one or more tools to gather data
-                3. Analyses the results and may call additional tools
-                4. Provides a comprehensive answer with insights
-
-                *Built with LangGraph, LangChain, and Gradio for the book
-                "Mastering Agentic AI for Marketing Technology" by Pushparajan Ramar.*
-                """
+                "**Tools:** Amplitude Funnels | Google Analytics | Python REPL "
+                "(pandas/numpy) | Web Search | Chart Generator (bar/line/pie)\n\n"
+                "Uses a **ReAct** loop: reason, call tools, analyse results, respond.\n\n"
+                "*Built with LangGraph + Gradio for "
+                '"Mastering Agentic AI for Marketing Technology" by Pushparajan Ramar.*'
             )
 
         # ----- Event handlers -----
@@ -331,10 +279,6 @@ def build_ui() -> gr.Blocks:
 
     return demo
 
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 app = build_ui()
 

@@ -6,18 +6,11 @@
 
 """LangGraph ReAct agent for the MarTech Analyst Sidekick.
 
-Builds a stateful, tool-augmented conversational agent that can:
-  - Query Amplitude funnels and Google Analytics metrics
-  - Execute ad-hoc Python analysis via a sandboxed REPL
-  - Search for real-time marketing news and benchmarks
-  - Generate matplotlib charts and return them as base64 images
+Stateful, tool-augmented agent that queries Amplitude funnels, GA4 metrics,
+runs Python analysis, searches marketing news, and generates charts.
+Uses MemorySaver for multi-turn memory and supports streaming output.
 
-The graph uses ``MemorySaver`` for multi-turn conversation memory and
-supports streaming output for real-time UI updates.
-
-Environment variables consumed (via .env):
-    OPENAI_API_KEY  - Required for the ChatOpenAI LLM
-    USE_MOCK        - "true" (default) or "false" for tool backends
+Environment variables: OPENAI_API_KEY (required), USE_MOCK (default "true").
 """
 
 from __future__ import annotations
@@ -27,7 +20,6 @@ import io
 import json
 import logging
 import os
-from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from dotenv import load_dotenv
@@ -55,16 +47,11 @@ log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
-# State definition
+# State
 # ---------------------------------------------------------------------------
 
 class AgentState(TypedDict):
-    """Shared state for the analyst sidekick graph.
-
-    Attributes:
-        messages: Conversation history with automatic message merging.
-    """
-
+    """Shared state — conversation history with automatic message merging."""
     messages: Annotated[list, add_messages]
 
 
@@ -72,30 +59,23 @@ class AgentState(TypedDict):
 # System prompt
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You are the MarTech Analyst Sidekick, an expert marketing \
-analytics assistant. You help marketing teams understand their data, identify \
-trends, and make data-driven decisions.
+SYSTEM_PROMPT = """\
+You are the MarTech Analyst Sidekick, an expert marketing analytics assistant \
+that helps teams understand data, identify trends, and make data-driven decisions.
 
-## Capabilities
-- **Amplitude Funnels**: Query funnel conversion data (signup_to_purchase, \
-trial_to_paid, lead_to_demo, or custom funnels).
-- **Google Analytics**: Retrieve metrics like sessions, conversion_rate, \
-revenue, bounce_rate, email_open_rate, and cac (customer acquisition cost) \
-broken down by dimensions.
-- **Python Analysis**: Run ad-hoc calculations, data transformations, and \
-statistical analysis with pandas and numpy.
-- **Web Search**: Look up the latest marketing benchmarks, news, and trends.
-- **Charts**: Generate matplotlib visualisations of data.
+Capabilities: Amplitude funnels (signup_to_purchase, trial_to_paid, lead_to_demo), \
+Google Analytics metrics (sessions, conversion_rate, revenue, bounce_rate, \
+email_open_rate, cac), Python REPL (pandas/numpy), web search for benchmarks, \
+and matplotlib chart generation.
 
-## Guidelines
-1. Always start by querying the relevant data source before answering.
-2. Provide specific numbers, percentages, and comparisons — not vague summaries.
-3. When showing trends, offer context (industry benchmarks, period-over-period change).
-4. Proactively suggest follow-up analyses the user might find valuable.
-5. If the user asks about a metric, retrieve it first — don't guess from memory.
-6. Use the Python REPL for calculations that go beyond simple lookups.
-7. Generate charts when a visual would help communicate the insight.
-8. Be concise but thorough. Format output with markdown for readability.
+Guidelines:
+1. Query data sources before answering — never guess from memory.
+2. Provide specific numbers, percentages, and comparisons.
+3. Offer context: industry benchmarks, period-over-period change.
+4. Suggest follow-up analyses the user might find valuable.
+5. Use Python REPL for calculations beyond simple lookups.
+6. Generate charts when a visual would help communicate the insight.
+7. Be concise but thorough. Use markdown for readability.
 """
 
 
@@ -105,52 +85,34 @@ statistical analysis with pandas and numpy.
 
 @tool
 def query_amplitude_funnel_tool(funnel_name: str, date_range: str = "last_quarter") -> str:
-    """Query Amplitude for funnel conversion metrics.
+    """Query Amplitude for funnel conversion metrics (steps, rates, drop-offs).
 
     Args:
-        funnel_name: Funnel identifier, e.g. "signup_to_purchase",
-                     "trial_to_paid", or "lead_to_demo".
-        date_range:  Date range such as "last_quarter" or "last_30_days".
-
-    Returns:
-        JSON string with funnel steps, conversion rates, and drop-off analysis.
+        funnel_name: e.g. "signup_to_purchase", "trial_to_paid", "lead_to_demo".
+        date_range:  e.g. "last_quarter" or "last_30_days".
     """
     return query_amplitude_funnel(funnel_name, date_range)
 
 
 @tool
 def query_google_analytics_tool(
-    metric: str,
-    dimension: str = "source_medium",
-    date_range: str = "last_quarter",
+    metric: str, dimension: str = "source_medium", date_range: str = "last_quarter",
 ) -> str:
-    """Query Google Analytics 4 for a marketing metric by dimension.
+    """Query GA4 for a marketing metric broken down by dimension.
 
     Args:
-        metric:     Metric name: sessions, conversion_rate, revenue,
-                    bounce_rate, email_open_rate, or cac.
-        dimension:  Breakdown dimension: source_medium, landing_page,
-                    segment, or channel.
-        date_range: Date range such as "last_quarter" or "last_30_days".
-
-    Returns:
-        JSON string with the metric and dimensional breakdown.
+        metric:    sessions, conversion_rate, revenue, bounce_rate, email_open_rate, or cac.
+        dimension: source_medium, landing_page, segment, or channel.
+        date_range: e.g. "last_quarter" or "last_30_days".
     """
     return query_google_analytics(metric, dimension, date_range)
 
 
 @tool
 def run_python_analysis_tool(code: str) -> str:
-    """Execute Python code in a sandboxed REPL with pandas and numpy.
+    """Execute Python code in a sandboxed REPL with pandas (pd), numpy (np), json, math.
 
-    Use print() to produce output. The namespace includes pd (pandas),
-    np (numpy), json, math, datetime, timedelta, mean, median, stdev.
-
-    Args:
-        code: Python source code to execute.
-
-    Returns:
-        Captured stdout and stderr, or error traceback.
+    Use print() to produce output. Returns captured stdout/stderr or error traceback.
     """
     return run_python_analysis(code)
 
@@ -161,9 +123,6 @@ def search_marketing_news_tool(query: str) -> str:
 
     Args:
         query: Natural-language search query about marketing topics.
-
-    Returns:
-        JSON string with search results including titles, snippets, and URLs.
     """
     return search_marketing_news(query)
 
@@ -173,14 +132,10 @@ def generate_chart(data: str, chart_type: str = "bar", title: str = "Chart") -> 
     """Generate a matplotlib chart and return it as a base64-encoded PNG.
 
     Args:
-        data:       JSON string with chart data. Expected format:
-                    {"labels": ["A", "B"], "values": [10, 20]}
-                    or {"labels": [...], "series": {"name1": [...], "name2": [...]}}
-        chart_type: Chart type — "bar", "line", "pie", or "horizontal_bar".
+        data:       JSON string: {"labels": [...], "values": [...]} or
+                    {"labels": [...], "series": {"name1": [...], ...}}.
+        chart_type: "bar", "line", "pie", or "horizontal_bar".
         title:      Chart title.
-
-    Returns:
-        Base64-encoded PNG image string prefixed with 'data:image/png;base64,'.
     """
     import matplotlib
     matplotlib.use("Agg")
@@ -196,51 +151,40 @@ def generate_chart(data: str, chart_type: str = "bar", title: str = "Chart") -> 
     series = chart_data.get("series", {})
 
     fig, ax = plt.subplots(figsize=(10, 6))
+    color = "#2563eb"
 
     if chart_type == "pie":
-        ax.pie(
-            values,
-            labels=labels,
-            autopct="%1.1f%%",
-            startangle=140,
-            colors=plt.cm.Set3.colors[:len(labels)],
-        )
-        ax.set_title(title, fontsize=14, fontweight="bold", pad=20)
-
+        ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=140,
+               colors=plt.cm.Set3.colors[:len(labels)])
     elif chart_type == "line":
         if series:
             for name, vals in series.items():
                 ax.plot(labels, vals, marker="o", label=name, linewidth=2)
-            ax.legend(loc="best", fontsize=10)
+            ax.legend(loc="best")
         else:
-            ax.plot(labels, values, marker="o", linewidth=2, color="#2563eb")
-        ax.set_title(title, fontsize=14, fontweight="bold")
+            ax.plot(labels, values, marker="o", linewidth=2, color=color)
         ax.grid(True, alpha=0.3)
         ax.tick_params(axis="x", rotation=45)
-
     elif chart_type == "horizontal_bar":
-        y_pos = range(len(labels))
-        ax.barh(y_pos, values, color="#2563eb", edgecolor="white", height=0.6)
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(labels, fontsize=10)
-        ax.set_title(title, fontsize=14, fontweight="bold")
+        ax.barh(range(len(labels)), values, color=color, height=0.6)
+        ax.set_yticks(range(len(labels)))
+        ax.set_yticklabels(labels)
         ax.grid(True, axis="x", alpha=0.3)
-
-    else:  # default: bar
+    else:  # bar
         if series:
             import numpy as np
             x = np.arange(len(labels))
-            width = 0.8 / len(series)
+            w = 0.8 / len(series)
             for i, (name, vals) in enumerate(series.items()):
-                ax.bar(x + i * width, vals, width, label=name)
-            ax.set_xticks(x + width * (len(series) - 1) / 2)
-            ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=10)
-            ax.legend(loc="best", fontsize=10)
+                ax.bar(x + i * w, vals, w, label=name)
+            ax.set_xticks(x + w * (len(series) - 1) / 2)
+            ax.set_xticklabels(labels, rotation=45, ha="right")
+            ax.legend(loc="best")
         else:
-            ax.bar(labels, values, color="#2563eb", edgecolor="white")
+            ax.bar(labels, values, color=color)
             ax.tick_params(axis="x", rotation=45)
-        ax.set_title(title, fontsize=14, fontweight="bold")
         ax.grid(True, axis="y", alpha=0.3)
+    ax.set_title(title, fontsize=14, fontweight="bold")
 
     plt.tight_layout()
 
@@ -275,35 +219,25 @@ TOOL_NAMES = {t.name for t in ALL_TOOLS}
 # ---------------------------------------------------------------------------
 
 def _get_llm() -> ChatOpenAI:
-    """Create the ChatOpenAI instance bound to the tool definitions."""
-    model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
-    return ChatOpenAI(model=model_name, temperature=0.1, streaming=True)
+    """Create the ChatOpenAI instance with tool bindings."""
+    return ChatOpenAI(
+        model=os.getenv("OPENAI_MODEL", "gpt-4o"), temperature=0.1, streaming=True,
+    )
 
 
 def agent_node(state: AgentState) -> dict[str, Any]:
-    """Invoke the LLM with the current conversation and tool bindings.
-
-    The LLM decides whether to call a tool or respond directly.
-    """
+    """Invoke the LLM — it decides whether to call a tool or respond."""
     llm = _get_llm().bind_tools(ALL_TOOLS)
-
     messages = state["messages"]
-
-    # Prepend system prompt if not already present
     if not messages or not isinstance(messages[0], SystemMessage):
         messages = [SystemMessage(content=SYSTEM_PROMPT)] + list(messages)
-
-    response = llm.invoke(messages)
-    return {"messages": [response]}
+    return {"messages": [llm.invoke(messages)]}
 
 
 def should_continue(state: AgentState) -> str:
-    """Route to 'tools' if the last message has tool calls, else 'end'."""
-    last_message = state["messages"][-1]
-
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-        return "tools"
-    return END
+    """Route to 'tools' if the last message has tool calls, else end."""
+    last = state["messages"][-1]
+    return "tools" if hasattr(last, "tool_calls") and last.tool_calls else END
 
 
 # ---------------------------------------------------------------------------
@@ -311,117 +245,55 @@ def should_continue(state: AgentState) -> str:
 # ---------------------------------------------------------------------------
 
 def build_graph() -> StateGraph:
-    """Construct and compile the MarTech Analyst Sidekick graph.
-
-    Returns:
-        A compiled LangGraph StateGraph with memory checkpointing.
-    """
-    tool_node = ToolNode(ALL_TOOLS)
-
-    graph_builder = StateGraph(AgentState)
-
-    # Add nodes
-    graph_builder.add_node("agent", agent_node)
-    graph_builder.add_node("tools", tool_node)
-
-    # Add edges
-    graph_builder.add_edge(START, "agent")
-    graph_builder.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
-    graph_builder.add_edge("tools", "agent")
-
-    # Compile with memory
-    memory = MemorySaver()
-    graph = graph_builder.compile(checkpointer=memory)
-
+    """Construct and compile the ReAct graph with MemorySaver checkpointing."""
+    builder = StateGraph(AgentState)
+    builder.add_node("agent", agent_node)
+    builder.add_node("tools", ToolNode(ALL_TOOLS))
+    builder.add_edge(START, "agent")
+    builder.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
+    builder.add_edge("tools", "agent")
+    compiled = builder.compile(checkpointer=MemorySaver())
     log.info("MarTech Analyst Sidekick graph compiled successfully")
-    return graph
+    return compiled
 
 
 # Module-level compiled graph for import by app.py
 graph = build_graph()
 
 
-# ---------------------------------------------------------------------------
-# Convenience: stream or invoke
-# ---------------------------------------------------------------------------
-
-def stream_response(
-    user_message: str,
-    thread_id: str = "default",
-) -> Any:
-    """Stream the agent's response for a user message.
-
-    Yields events from the graph execution, including tool calls and
-    final responses.
-
-    Args:
-        user_message: The user's natural-language query.
-        thread_id:    Conversation thread ID for memory continuity.
-
-    Yields:
-        LangGraph stream events (dict) containing node outputs.
-    """
+def stream_response(user_message: str, thread_id: str = "default") -> Any:
+    """Stream graph events for a user message. Yields node update dicts."""
     config = {"configurable": {"thread_id": thread_id}}
     input_state = {"messages": [HumanMessage(content=user_message)]}
-
     for event in graph.stream(input_state, config=config, stream_mode="updates"):
         yield event
 
 
-def invoke_response(
-    user_message: str,
-    thread_id: str = "default",
-) -> str:
-    """Invoke the agent and return the final text response.
-
-    Args:
-        user_message: The user's natural-language query.
-        thread_id:    Conversation thread ID for memory continuity.
-
-    Returns:
-        The assistant's final text response.
-    """
+def invoke_response(user_message: str, thread_id: str = "default") -> str:
+    """Invoke the agent and return the final text response."""
     config = {"configurable": {"thread_id": thread_id}}
     input_state = {"messages": [HumanMessage(content=user_message)]}
-
     result = graph.invoke(input_state, config=config)
-    last_message = result["messages"][-1]
-    return last_message.content
+    return result["messages"][-1].content
 
-
-# ---------------------------------------------------------------------------
-# Demo / main
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     print("=" * 60)
     print("MarTech Analyst Sidekick — Graph Demo")
     print("=" * 60)
 
-    test_queries = [
-        "Which channels drove the most pipeline last quarter?",
-        "What's our current CAC trend?",
-    ]
-
     thread = "demo-thread-001"
-
-    for query in test_queries:
-        print(f"\n{'='*60}")
-        print(f"USER: {query}")
-        print("-" * 60)
-
-        print("\n[Streaming events]")
+    for query in ["Which channels drove the most pipeline last quarter?",
+                  "What's our current CAC trend?"]:
+        print(f"\nUSER: {query}\n" + "-" * 60)
         for event in stream_response(query, thread_id=thread):
             for node_name, node_output in event.items():
-                if node_name == "agent":
-                    msg = node_output["messages"][-1]
-                    if hasattr(msg, "tool_calls") and msg.tool_calls:
+                msgs = node_output.get("messages", [])
+                for msg in msgs:
+                    if isinstance(msg, AIMessage) and hasattr(msg, "tool_calls") and msg.tool_calls:
                         for tc in msg.tool_calls:
-                            print(f"  -> Calling tool: {tc['name']}({json.dumps(tc['args'], indent=2)[:120]}...)")
-                    elif hasattr(msg, "content") and msg.content:
+                            print(f"  -> Tool: {tc['name']}({json.dumps(tc['args'])[:100]})")
+                    elif isinstance(msg, ToolMessage):
+                        print(f"  <- {msg.name}: {msg.content[:120].replace(chr(10), ' ')}...")
+                    elif isinstance(msg, AIMessage) and msg.content:
                         print(f"\nASSISTANT:\n{msg.content[:500]}")
-                elif node_name == "tools":
-                    for msg in node_output["messages"]:
-                        if isinstance(msg, ToolMessage):
-                            preview = msg.content[:150].replace("\n", " ")
-                            print(f"  <- Tool result ({msg.name}): {preview}...")

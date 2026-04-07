@@ -175,28 +175,10 @@ def send_nurture_email(
     subject = subject_map.get(content_type, subject_map["educational"])
 
     body_map: dict[str, str] = {
-        "educational": (
-            f"Hi {first_name},\n\nWe put together a quick guide on the three "
-            f"strategies that top-performing marketing teams are using right now "
-            f"to drive pipeline growth while reducing manual effort.\n\n"
-            f"Read the full guide here: [link]"
-        ),
-        "case_study": (
-            f"Hi {first_name},\n\nSee how a company in your space increased "
-            f"qualified leads by 40% in just 90 days using our platform.\n\n"
-            f"Read the case study: [link]"
-        ),
-        "product_update": (
-            f"Hi {first_name},\n\nThis month we shipped AI-powered journey "
-            f"orchestration, smarter segmentation, and faster reporting.\n\n"
-            f"See the highlights: [link]"
-        ),
-        "roi_report": (
-            f"Hi {first_name},\n\nBased on your engagement so far, we've "
-            f"prepared a personalized ROI snapshot that estimates the impact "
-            f"our platform could have on your marketing KPIs.\n\n"
-            f"View your report: [link]"
-        ),
+        "educational": f"Hi {first_name}, here are three strategies top marketing teams use to drive pipeline growth.",
+        "case_study": f"Hi {first_name}, see how a company in your space boosted qualified leads by 40% in 90 days.",
+        "product_update": f"Hi {first_name}, this month we shipped AI-powered journey orchestration and smarter segmentation.",
+        "roi_report": f"Hi {first_name}, we prepared a personalized ROI snapshot based on your engagement so far.",
     }
     body_preview = body_map.get(content_type, body_map["educational"])
 
@@ -292,20 +274,13 @@ def send_demo_offer(contact: dict[str, Any]) -> dict[str, Any]:
 
 if __name__ == "__main__":
     import json
-
-    print("=" * 60)
-    print("Email Tools — Demo")
-    print("=" * 60)
+    print("=" * 60, "\nEmail Tools — Demo\n" + "=" * 60)
     print(f"USE_MOCK = {USE_MOCK}\n")
-
     sample = {"email": "sarah.chen@acmesaas.com", "first_name": "Sarah"}
-
-    for label, fn, kwargs in [
+    for label, fn, kw in [
         ("Welcome", send_welcome_email, {"contact": sample}),
-        ("Nurture (educational)", send_nurture_email, {"contact": sample, "content_type": "educational"}),
-        ("Nurture (case_study)", send_nurture_email, {"contact": sample, "content_type": "case_study"}),
+        ("Nurture", send_nurture_email, {"contact": sample, "content_type": "educational"}),
         ("Demo Offer", send_demo_offer, {"contact": sample}),
     ]:
         print(f"--- {label} ---")
-        print(json.dumps(fn(**kwargs), indent=2))
-        print()
+        print(json.dumps(fn(**kw), indent=2), "\n")

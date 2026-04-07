@@ -284,34 +284,13 @@ def handoff_to_sales(
 
 if __name__ == "__main__":
     import json
-
-    print("=" * 60)
-    print("CRM Tools — Demo")
-    print("=" * 60)
+    print("=" * 60, "\nCRM Tools — Demo\n" + "=" * 60)
     print(f"USE_MOCK = {USE_MOCK}\n")
-
     cid = "contact-high-001"
-
-    for label, fn, kwargs in [
-        (
-            "Update Lifecycle Stage",
-            update_lifecycle_stage,
-            {"contact_id": cid, "stage": "marketingqualifiedlead"},
-        ),
-        (
-            "Create Sales Task",
-            create_sales_task,
-            {"contact_id": cid, "description": "High engagement — schedule discovery call."},
-        ),
-        (
-            "Full Sales Handoff",
-            handoff_to_sales,
-            {
-                "contact_id": cid,
-                "context": "12 email opens, 34 page views, attended webinar, requested demo.",
-            },
-        ),
+    for label, fn, kw in [
+        ("Lifecycle", update_lifecycle_stage, {"contact_id": cid, "stage": "marketingqualifiedlead"}),
+        ("Sales Task", create_sales_task, {"contact_id": cid, "description": "Schedule discovery call."}),
+        ("Handoff", handoff_to_sales, {"contact_id": cid, "context": "12 opens, 34 views, webinar."}),
     ]:
         print(f"--- {label} ---")
-        print(json.dumps(fn(**kwargs), indent=2))
-        print()
+        print(json.dumps(fn(**kw), indent=2), "\n")

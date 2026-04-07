@@ -23,9 +23,7 @@ MemorySaver) so thread IDs remain unique across runs.
 
 from __future__ import annotations
 
-import json
 import logging
-import sys
 from typing import Any
 
 from langgraph.checkpoint.memory import MemorySaver
@@ -35,11 +33,12 @@ from nodes import (
     enter_long_nurture,
     evaluate_engagement,
     handoff_to_sales,
+    route_entry,
     send_demo_offer,
     send_nurture_email,
     send_welcome_email,
 )
-from routing import route_after_demo, route_next_touch
+from routing import route_after_demo, route_entry as route_entry_fn, route_next_touch
 from state import JourneyState
 
 logging.basicConfig(
@@ -58,6 +57,7 @@ def _build_graph() -> tuple[Any, MemorySaver]:
     """Build and compile a fresh journey graph with its own checkpointer."""
     builder = StateGraph(JourneyState)
 
+    builder.add_node("route_entry", route_entry)
     builder.add_node("send_welcome_email", send_welcome_email)
     builder.add_node("evaluate_engagement", evaluate_engagement)
     builder.add_node("send_nurture_email", send_nurture_email)
@@ -65,7 +65,16 @@ def _build_graph() -> tuple[Any, MemorySaver]:
     builder.add_node("handoff_to_sales", handoff_to_sales)
     builder.add_node("enter_long_nurture", enter_long_nurture)
 
-    builder.set_entry_point("send_welcome_email")
+    builder.set_entry_point("route_entry")
+
+    builder.add_conditional_edges(
+        "route_entry",
+        route_entry_fn,
+        {
+            "send_welcome_email": "send_welcome_email",
+            "evaluate_engagement": "evaluate_engagement",
+        },
+    )
 
     builder.add_edge("send_welcome_email", "evaluate_engagement")
 
@@ -285,10 +294,6 @@ def run_full_simulation() -> None:
     print(f"  {'-' * 67}")
     print(f"\n  Simulation complete.\n")
 
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     run_full_simulation()

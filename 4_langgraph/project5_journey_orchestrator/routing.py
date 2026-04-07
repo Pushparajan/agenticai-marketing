@@ -26,6 +26,30 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
+def route_entry(state: JourneyState) -> str:
+    """Route from the entry node to either welcome or evaluation.
+
+    First-time contacts (touchpoints_sent == 0) receive a welcome email.
+    Returning contacts skip straight to engagement evaluation.
+
+    Args:
+        state: Current journey state.
+
+    Returns:
+        Node name: "send_welcome_email" or "evaluate_engagement".
+    """
+    if state["touchpoints_sent"] == 0:
+        decision = "send_welcome_email"
+    else:
+        decision = "evaluate_engagement"
+
+    log.info(
+        "route_entry  contact=%s  touchpoints=%d  -> %s",
+        state["contact_id"], state["touchpoints_sent"], decision,
+    )
+    return decision
+
+
 def route_next_touch(state: JourneyState) -> str:
     """Route from engagement evaluation to the appropriate next touchpoint.
 

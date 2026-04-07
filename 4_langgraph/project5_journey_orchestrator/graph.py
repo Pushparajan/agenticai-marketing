@@ -33,11 +33,12 @@ from nodes import (
     enter_long_nurture,
     evaluate_engagement,
     handoff_to_sales,
+    route_entry,
     send_demo_offer,
     send_nurture_email,
     send_welcome_email,
 )
-from routing import route_after_demo, route_next_touch
+from routing import route_after_demo, route_entry as route_entry_fn, route_next_touch
 from state import JourneyState
 
 logging.basicConfig(
@@ -59,10 +60,11 @@ def build_journey_graph() -> StateGraph:
 
         START
           |
-        send_welcome_email
+        route_entry (conditional)
+          +---> send_welcome_email ---> evaluate_engagement
+          +---> evaluate_engagement (directly, on re-entry)
           |
-        evaluate_engagement
-          |  (conditional)
+        evaluate_engagement (conditional)
           +---> send_nurture_email ---> END
           +---> send_demo_offer ------> (conditional)
           |                               +---> handoff_to_sales ---> END
@@ -77,6 +79,7 @@ def build_journey_graph() -> StateGraph:
     builder = StateGraph(JourneyState)
 
     # -- add nodes --
+    builder.add_node("route_entry", route_entry)
     builder.add_node("send_welcome_email", send_welcome_email)
     builder.add_node("evaluate_engagement", evaluate_engagement)
     builder.add_node("send_nurture_email", send_nurture_email)
@@ -85,9 +88,19 @@ def build_journey_graph() -> StateGraph:
     builder.add_node("enter_long_nurture", enter_long_nurture)
 
     # -- entry point --
-    builder.set_entry_point("send_welcome_email")
+    builder.set_entry_point("route_entry")
 
     # -- edges --
+    # Entry router: welcome on first touch, evaluate on re-entry
+    builder.add_conditional_edges(
+        "route_entry",
+        route_entry_fn,
+        {
+            "send_welcome_email": "send_welcome_email",
+            "evaluate_engagement": "evaluate_engagement",
+        },
+    )
+
     # After welcome, always evaluate engagement
     builder.add_edge("send_welcome_email", "evaluate_engagement")
 
@@ -124,7 +137,7 @@ def build_journey_graph() -> StateGraph:
         interrupt_before=["handoff_to_sales"],
     )
 
-    log.info("Journey graph compiled  nodes=%d  interrupt_before=[handoff_to_sales]", 6)
+    log.info("Journey graph compiled  nodes=%d  interrupt_before=[handoff_to_sales]", 7)
     return compiled
 
 
@@ -147,6 +160,7 @@ if __name__ == "__main__":
     # Print graph structure
     print("\nGraph nodes:")
     for node_name in [
+        "route_entry",
         "send_welcome_email",
         "evaluate_engagement",
         "send_nurture_email",
