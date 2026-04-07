@@ -1,0 +1,82 @@
+# config/tasks.yaml
+# Project 3: Campaign Intelligence Crew
+# Chapter Reference: Chapter 3 - CrewAI
+# Book: "Mastering Agentic AI for Marketing Technology" by Pushparajan Ramar
+#
+# Task definitions for the sequential Campaign Intelligence pipeline.
+# Execution order: segment_task -> brief_task -> copy_task
+# Each downstream task receives the output of the previous task as context.
+
+segment_task:
+  description: >
+    Query the Segment CDP to retrieve audience data for the "{audience_name}"
+    segment in the "{industry}" industry. Analyze the returned demographics,
+    behavioral signals, purchase patterns, and engagement metrics.
+
+    Deliver a structured audience analysis that includes:
+    1. Segment overview (size, growth trend, geographic distribution)
+    2. Demographic profile (age, income, job titles, company size)
+    3. Behavioral insights (channels used, content preferences, buying triggers)
+    4. Psychographic themes (motivations, pain points, aspirations)
+    5. Recommended micro-segments for campaign targeting
+    6. Key risks or data gaps to flag
+
+    Use the query_segment_cdp tool to pull the audience data.
+  expected_output: >
+    A detailed audience intelligence report in Markdown format with clear
+    sections for demographics, behaviors, psychographics, micro-segment
+    recommendations, and data quality notes. Include specific numbers and
+    percentages wherever possible.
+  agent: audience_intelligence_analyst
+
+brief_task:
+  description: >
+    Using the audience intelligence report from the previous task, plus
+    competitive research for the "{industry}" industry across the
+    "{channels}" channel(s), create a comprehensive campaign brief.
+
+    The brief must include:
+    1. Campaign objective and primary KPI targets
+    2. Target audience summary (from the segment analysis)
+    3. Competitive landscape snapshot (use the search_competitor_campaigns tool)
+    4. Positioning statement and unique value proposition
+    5. Core messaging pillars (3-5 pillars with supporting proof points)
+    6. Channel strategy and budget allocation rationale
+    7. Content requirements per channel
+    8. Timeline and milestone recommendations
+    9. Success metrics and measurement plan
+
+    Use the search_competitor_campaigns tool to gather competitive intelligence.
+  expected_output: >
+    A professional campaign brief in Markdown format, structured with
+    numbered sections, ready to hand off to the creative team. Include
+    a one-paragraph executive summary at the top.
+  agent: campaign_strategy_director
+
+copy_task:
+  description: >
+    Using the campaign brief from the previous task, generate high-converting
+    marketing copy for all channels specified in the brief. For each channel,
+    produce:
+
+    1. Email sequence (3 emails: awareness, consideration, conversion)
+       - Subject lines (2 variants each for A/B testing)
+       - Preview text
+       - Full body copy
+    2. Ad copy (2 variants each for the specified channels)
+       - Headline, body, CTA
+    3. Landing page hero section
+       - Headline, subheadline, CTA button text, supporting bullet points
+    4. Social media posts (2 per platform mentioned in the brief)
+
+    Annotate each piece with the persuasion framework used (PAS, AIDA, BAB,
+    etc.) and the target micro-segment it addresses.
+
+    After generating the copy, publish the complete output using the
+    publish_to_notion tool.
+  expected_output: >
+    A complete campaign copy deck in Markdown format with clearly labeled
+    sections for each channel, A/B variants, persuasion annotations, and
+    micro-segment targeting notes. Each piece should be ready for
+    production use.
+  agent: conversion_copywriter
