@@ -165,21 +165,25 @@ async def simulate_archetype(graph, archetype: dict) -> None:
               f"Competitors: {state['competitors_named']}  |  "
               f"Days: {state['days_in_decision']}")
 
-        # For high-value deals that need human approval, auto-approve for demo
-        if state["deal_value"] > 50_000 and not state.get("human_approved", False):
-            # First invocation will be interrupted; we approve and continue
-            result = await graph.ainvoke(dict(state), config=config)
+        # Use a fresh thread for each invocation to avoid state conflicts
+        thread_id = uuid.uuid4().hex[:12]
+        config = {"configurable": {"thread_id": thread_id}}
 
-            if result.get("last_action") == "request_human_approval" or not result.get("last_action"):
-                # Simulate human approval
-                print("  >> [HUMAN-IN-THE-LOOP] Auto-approving for demo...")
-                state["human_approved"] = True
-                # Re-create config with new thread to continue
-                thread_id = uuid.uuid4().hex[:12]
-                config = {"configurable": {"thread_id": thread_id}}
-                result = await graph.ainvoke(dict(state), config=config)
-        else:
-            # Need a new thread for each invocation to avoid state conflicts
+        # For high-value deals that need human approval, auto-approve for demo.
+        # The interrupt_before on pause_for_human_review means ainvoke returns
+        # after evaluate_decision_signals (the node *before* the interrupted
+        # node).  We detect this by checking the routing function directly.
+        from stage3_decision.graph.routing import route_decision_action
+
+        result = await graph.ainvoke(dict(state), config=config)
+
+        if (
+            state["deal_value"] > 50_000
+            and not state.get("human_approved", False)
+            and route_decision_action(state) == "request_human_approval"
+        ):
+            print("  >> [HUMAN-IN-THE-LOOP] Graph paused — auto-approving for demo...")
+            state["human_approved"] = True
             thread_id = uuid.uuid4().hex[:12]
             config = {"configurable": {"thread_id": thread_id}}
             result = await graph.ainvoke(dict(state), config=config)

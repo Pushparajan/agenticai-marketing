@@ -23,7 +23,11 @@ import json
 import logging
 from typing import Any
 
-from agents import Agent, Runner, function_tool
+try:
+    from agents import Agent, Runner, function_tool
+    _HAS_AGENTS_SDK = True
+except ImportError:
+    _HAS_AGENTS_SDK = False
 
 # -- Tool modules (MCP-style functions) ------------------------------------
 from stage6_advocacy.tools.nps_tools import (
@@ -92,78 +96,70 @@ def classify_advocacy_action(profile: dict[str, Any]) -> list[str]:
 
 # ---------------------------------------------------------------------------
 # Wrap plain functions as @function_tool for OpenAI Agents SDK
+# (guarded so the module is importable without the SDK installed)
 # ---------------------------------------------------------------------------
 
-@function_tool
-def tool_get_nps_score(customer_id: str) -> str:
-    """Retrieve the latest NPS score and profile for a customer."""
-    return get_nps_score(customer_id)
+if _HAS_AGENTS_SDK:
 
+    @function_tool
+    def tool_get_nps_score(customer_id: str) -> str:
+        """Retrieve the latest NPS score and profile for a customer."""
+        return get_nps_score(customer_id)
 
-@function_tool
-def tool_get_nps_distribution() -> str:
-    """Return the NPS score distribution across all surveyed customers."""
-    return get_nps_distribution()
+    @function_tool
+    def tool_get_nps_distribution() -> str:
+        """Return the NPS score distribution across all surveyed customers."""
+        return get_nps_distribution()
 
+    @function_tool
+    def tool_identify_advocates(min_nps: int, min_ltv: float) -> str:
+        """Identify customers who qualify as advocates based on NPS and LTV thresholds."""
+        return identify_advocates(min_nps, min_ltv)
 
-@function_tool
-def tool_identify_advocates(min_nps: int, min_ltv: float) -> str:
-    """Identify customers who qualify as advocates based on NPS and LTV thresholds."""
-    return identify_advocates(min_nps, min_ltv)
+    @function_tool
+    def tool_send_nps_followup(customer_id: str, nps_score: int) -> str:
+        """Send an NPS follow-up email appropriate to the customer's score band."""
+        return send_nps_followup(customer_id, nps_score)
 
+    @function_tool
+    def tool_request_g2_review(contact_email: str, personalisation_note: str) -> str:
+        """Send a personalised G2 review request (respects cooldown throttle)."""
+        return request_g2_review(contact_email, personalisation_note)
 
-@function_tool
-def tool_send_nps_followup(customer_id: str, nps_score: int) -> str:
-    """Send an NPS follow-up email appropriate to the customer's score band."""
-    return send_nps_followup(customer_id, nps_score)
+    @function_tool
+    def tool_check_review_request_cooldown(contact_email: str) -> str:
+        """Check whether a contact is within the review-request cooldown window."""
+        return check_review_request_cooldown(contact_email)
 
+    @function_tool
+    def tool_trigger_referral_programme(customer_id: str, programme_tier: str) -> str:
+        """Enrol a customer in the referral programme at the specified tier."""
+        return trigger_referral_programme(customer_id, programme_tier)
 
-@function_tool
-def tool_request_g2_review(contact_email: str, personalisation_note: str) -> str:
-    """Send a personalised G2 review request (respects cooldown throttle)."""
-    return request_g2_review(contact_email, personalisation_note)
+    @function_tool
+    def tool_get_referral_pipeline(customer_id: str) -> str:
+        """Get the referral pipeline summary for an enrolled customer."""
+        return get_referral_pipeline(customer_id)
 
+    @function_tool
+    def tool_create_referral_link(customer_id: str) -> str:
+        """Generate or retrieve a unique referral link for a customer."""
+        return create_referral_link(customer_id)
 
-@function_tool
-def tool_check_review_request_cooldown(contact_email: str) -> str:
-    """Check whether a contact is within the review-request cooldown window."""
-    return check_review_request_cooldown(contact_email)
+    @function_tool
+    def tool_invite_to_community(contact_email: str, community_type: str) -> str:
+        """Invite a customer to a community channel (slack, forum, advisory board, etc.)."""
+        return invite_to_community(contact_email, community_type)
 
+    @function_tool
+    def tool_get_community_activity(customer_id: str) -> str:
+        """Retrieve a customer's community engagement activity and score."""
+        return get_community_activity(customer_id)
 
-@function_tool
-def tool_trigger_referral_programme(customer_id: str, programme_tier: str) -> str:
-    """Enrol a customer in the referral programme at the specified tier."""
-    return trigger_referral_programme(customer_id, programme_tier)
-
-
-@function_tool
-def tool_get_referral_pipeline(customer_id: str) -> str:
-    """Get the referral pipeline summary for an enrolled customer."""
-    return get_referral_pipeline(customer_id)
-
-
-@function_tool
-def tool_create_referral_link(customer_id: str) -> str:
-    """Generate or retrieve a unique referral link for a customer."""
-    return create_referral_link(customer_id)
-
-
-@function_tool
-def tool_invite_to_community(contact_email: str, community_type: str) -> str:
-    """Invite a customer to a community channel (slack, forum, advisory board, etc.)."""
-    return invite_to_community(contact_email, community_type)
-
-
-@function_tool
-def tool_get_community_activity(customer_id: str) -> str:
-    """Retrieve a customer's community engagement activity and score."""
-    return get_community_activity(customer_id)
-
-
-@function_tool
-def tool_request_case_study_participation(customer_id: str, use_case: str) -> str:
-    """Request a customer to participate in a case study for a specific use case."""
-    return request_case_study_participation(customer_id, use_case)
+    @function_tool
+    def tool_request_case_study_participation(customer_id: str, use_case: str) -> str:
+        """Request a customer to participate in a case study for a specific use case."""
+        return request_case_study_participation(customer_id, use_case)
 
 
 # ---------------------------------------------------------------------------
@@ -200,25 +196,28 @@ appreciative, and never pushy. Respect cooldown windows for review
 requests.
 """
 
-advocacy_activation_agent = Agent(
-    name="AdvocacyActivationAgent",
-    model="gpt-4.1",
-    instructions=SYSTEM_PROMPT,
-    tools=[
-        tool_get_nps_score,
-        tool_get_nps_distribution,
-        tool_identify_advocates,
-        tool_send_nps_followup,
-        tool_request_g2_review,
-        tool_check_review_request_cooldown,
-        tool_trigger_referral_programme,
-        tool_get_referral_pipeline,
-        tool_create_referral_link,
-        tool_invite_to_community,
-        tool_get_community_activity,
-        tool_request_case_study_participation,
-    ],
-)
+if _HAS_AGENTS_SDK:
+    advocacy_activation_agent = Agent(
+        name="AdvocacyActivationAgent",
+        model="gpt-4.1",
+        instructions=SYSTEM_PROMPT,
+        tools=[
+            tool_get_nps_score,
+            tool_get_nps_distribution,
+            tool_identify_advocates,
+            tool_send_nps_followup,
+            tool_request_g2_review,
+            tool_check_review_request_cooldown,
+            tool_trigger_referral_programme,
+            tool_get_referral_pipeline,
+            tool_create_referral_link,
+            tool_invite_to_community,
+            tool_get_community_activity,
+            tool_request_case_study_participation,
+        ],
+    )
+else:
+    advocacy_activation_agent = None  # type: ignore[assignment]
 
 
 # ---------------------------------------------------------------------------
@@ -234,5 +233,10 @@ async def run_advocacy_agent(prompt: str) -> str:
     Returns:
         The agent's final text response.
     """
+    if not _HAS_AGENTS_SDK:
+        raise RuntimeError(
+            "OpenAI Agents SDK is not installed. "
+            "Install with: pip install openai-agents"
+        )
     result = await Runner.run(advocacy_activation_agent, input=prompt)
     return result.final_output

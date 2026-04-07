@@ -62,7 +62,7 @@ async def evaluate_decision_signals(state: dict) -> dict:
     CRM information so downstream routing is accurate.
     """
     deal_id = state.get("deal_id", "")
-    raw = get_deal(deal_id)
+    raw = get_deal.invoke({"deal_id": deal_id})
     deal_data: dict = json.loads(raw) if isinstance(raw, str) else raw
 
     intent = state.get("intent_score", 50)
@@ -103,14 +103,18 @@ async def handle_objections(state: dict) -> dict:
 
     responses: list[str] = []
     for obj in objections:
-        common = get_common_objections(company)
-        reply = generate_objection_response(obj, product)
+        common = get_common_objections.invoke({"industry": company})
+        reply = generate_objection_response.invoke(
+            {"objection": obj, "product": product}
+        )
         responses.append(f"Objection: '{obj}' -> Response: {reply}")
 
     combined = "\n".join(responses) if responses else "No objections to address."
     summary = f"[{_ts()}] Objection handling complete for {company}.\n{combined}"
 
-    update_deal_stage(state.get("deal_id", ""), "objection_addressed")
+    update_deal_stage.invoke(
+        {"deal_id": state.get("deal_id", ""), "stage": "objection_addressed"}
+    )
 
     return {
         "last_action": "address_objections",
@@ -131,8 +135,10 @@ async def send_competitive_battlecard(state: dict) -> dict:
 
     cards: list[str] = []
     for comp in competitors:
-        card = get_battlecard(comp)
-        comparison = get_competitive_comparison(comp, "all")
+        card = get_battlecard.invoke({"competitor": comp})
+        comparison = get_competitive_comparison.invoke(
+            {"competitor": comp, "feature_area": "all"}
+        )
         cards.append(f"--- {comp} ---\n{card}\n{comparison}")
 
     combined = "\n\n".join(cards) if cards else "No competitors to compare."
@@ -159,14 +165,14 @@ async def generate_and_send_close_offer(state: dict) -> dict:
     deal_id = state.get("deal_id", "")
     company = state.get("company", "Unknown")
 
-    offer = generate_close_offer(deal_value, tier)
+    offer = generate_close_offer.invoke({"deal_value": deal_value, "tier": tier})
 
-    update_deal_stage(deal_id, "close_offer_sent")
-    create_deal_task(
-        deal_id,
-        title=f"Follow up on close offer for {company}",
-        owner="sales-rep",
-    )
+    update_deal_stage.invoke({"deal_id": deal_id, "stage": "close_offer_sent"})
+    create_deal_task.invoke({
+        "deal_id": deal_id,
+        "title": f"Follow up on close offer for {company}",
+        "owner": "sales-rep",
+    })
 
     summary = (
         f"[{_ts()}] Close offer generated for {company} "
@@ -190,8 +196,12 @@ async def send_urgency_reactivation(state: dict) -> dict:
     days = state.get("days_in_decision", 0)
     company = state.get("company", "Unknown")
 
-    campaign = create_urgency_campaign(contact_id, days)
-    update_deal_stage(state.get("deal_id", ""), "reactivation_sent")
+    campaign = create_urgency_campaign.invoke(
+        {"contact_id": contact_id, "days_stalled": days}
+    )
+    update_deal_stage.invoke(
+        {"deal_id": state.get("deal_id", ""), "stage": "reactivation_sent"}
+    )
 
     summary = (
         f"[{_ts()}] Urgency reactivation sent for {company} "
@@ -219,11 +229,11 @@ async def pause_for_human_review(state: dict) -> dict:
     company = state.get("company", "Unknown")
     deal_value = state.get("deal_value", 0.0)
 
-    create_deal_task(
-        deal_id,
-        title=f"REVIEW REQUIRED: approve close action for {company} (${deal_value:,.0f})",
-        owner="sales-manager",
-    )
+    create_deal_task.invoke({
+        "deal_id": deal_id,
+        "title": f"REVIEW REQUIRED: approve close action for {company} (${deal_value:,.0f})",
+        "owner": "sales-manager",
+    })
 
     summary = (
         f"[{_ts()}] Human review requested for deal {deal_id} "

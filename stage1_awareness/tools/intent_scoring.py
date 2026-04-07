@@ -49,14 +49,14 @@ SIGNAL_WEIGHTS: dict[str, int] = {
 _MOCK_SIGNALS: dict[str, dict[str, int]] = {
     "alice@techcorp.com": {
         "pricing_page": 3,
-        "demo_page": 2,
-        "content_download": 1,
-        "g2_research": 1,
-        "email_open": 4,
+        "demo_page": 3,
+        "content_download": 3,
+        "g2_research": 3,
+        "email_open": 5,
     },
     "bob@startup.io": {
-        "pricing_page": 1,
-        "demo_page": 0,
+        "pricing_page": 2,
+        "demo_page": 1,
         "content_download": 2,
         "g2_research": 1,
         "email_open": 3,

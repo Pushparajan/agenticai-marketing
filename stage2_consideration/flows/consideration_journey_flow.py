@@ -75,11 +75,7 @@ def _publish_to_klaviyo(email: str, flow_id: str, properties: dict) -> dict:
         }
     }
     with httpx.Client(timeout=30) as client:
-        resp = client.post(
-            "https://a.klaviyo.com/api/events/",
-            headers=headers,
-            json=payload,
-        )
+        resp = client.post("https://a.klaviyo.com/api/events/", headers=headers, json=payload)
         resp.raise_for_status()
         return {"status": "success", "http_status": resp.status_code}
 

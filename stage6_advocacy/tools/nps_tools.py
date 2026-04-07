@@ -121,14 +121,7 @@ def _fetch_nps_real(customer_id: str) -> dict[str, Any]:
 
 
 def get_nps_score(customer_id: str) -> str:
-    """Return the latest NPS score and profile for a customer.
-
-    Args:
-        customer_id: Unique customer identifier (e.g. 'CUST-001').
-
-    Returns:
-        JSON string with NPS score, segment, LTV, and survey metadata.
-    """
+    """Return the latest NPS score and profile for *customer_id*."""
     logger.info("get_nps_score called for %s (mock=%s)", customer_id, USE_MOCK)
 
     if USE_MOCK:
@@ -146,11 +139,7 @@ def get_nps_score(customer_id: str) -> str:
 
 
 def get_nps_distribution() -> str:
-    """Return the NPS score distribution across all customers.
-
-    Returns:
-        JSON string with promoters/passives/detractors counts and overall NPS.
-    """
+    """Return NPS distribution (promoters/passives/detractors) and overall NPS."""
     logger.info("get_nps_distribution called (mock=%s)", USE_MOCK)
 
     if USE_MOCK:
@@ -189,15 +178,7 @@ def get_nps_distribution() -> str:
 
 
 def identify_advocates(min_nps: int, min_ltv: float) -> str:
-    """Identify customers who qualify as advocates based on NPS and LTV.
-
-    Args:
-        min_nps: Minimum NPS score to qualify (e.g. 9).
-        min_ltv: Minimum lifetime value in USD (e.g. 50000.0).
-
-    Returns:
-        JSON string with list of qualifying advocate profiles.
-    """
+    """Identify customers qualifying as advocates by NPS and LTV thresholds."""
     logger.info(
         "identify_advocates called (min_nps=%d, min_ltv=%.0f, mock=%s)",
         min_nps, min_ltv, USE_MOCK,
@@ -241,19 +222,7 @@ def identify_advocates(min_nps: int, min_ltv: float) -> str:
 
 
 def send_nps_followup(customer_id: str, nps_score: int) -> str:
-    """Send an appropriate NPS follow-up based on the score.
-
-    For promoters (9-10): thank-you + advocacy ask.
-    For passives (7-8): improvement commitment.
-    For detractors (0-6): escalation to CS manager.
-
-    Args:
-        customer_id: Customer identifier.
-        nps_score: The NPS score that was given.
-
-    Returns:
-        JSON string confirming the follow-up action taken.
-    """
+    """Send NPS follow-up: promoter thank-you, passive commitment, or detractor escalation."""
     logger.info(
         "send_nps_followup for %s score=%d (mock=%s)",
         customer_id, nps_score, USE_MOCK,

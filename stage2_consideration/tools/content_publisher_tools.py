@@ -131,79 +131,42 @@ def get_content_library(category: str) -> str:
                 {
                     "id": "cnt_001",
                     "title": "The Complete Guide to Marketing Automation in 2026",
-                    "type": category,
-                    "format": "PDF",
-                    "word_count": 4500,
-                    "target_persona": "VP of Marketing",
-                    "funnel_stage": "consideration",
-                    "performance": {
-                        "total_downloads": 1_230,
-                        "avg_time_on_page_sec": 210,
-                        "conversion_rate_pct": 8.5,
-                    },
+                    "type": category, "format": "PDF", "word_count": 4500,
+                    "target_persona": "VP of Marketing", "funnel_stage": "consideration",
+                    "performance": {"total_downloads": 1230, "conversion_rate_pct": 8.5},
                     "url": "https://content.company.com/guides/marketing-automation-2026",
-                    "last_updated": "2026-03-01",
                 },
                 {
                     "id": "cnt_002",
                     "title": "ROI Calculator: Marketing Platform Consolidation",
-                    "type": "interactive_tool",
-                    "format": "Web App",
-                    "target_persona": "Revenue Operations",
-                    "funnel_stage": "consideration",
-                    "performance": {
-                        "total_completions": 856,
-                        "avg_engagement_sec": 340,
-                        "conversion_rate_pct": 14.2,
-                    },
+                    "type": "interactive_tool", "format": "Web App",
+                    "target_persona": "Revenue Operations", "funnel_stage": "consideration",
+                    "performance": {"total_completions": 856, "conversion_rate_pct": 14.2},
                     "url": "https://content.company.com/tools/roi-calculator",
-                    "last_updated": "2026-02-15",
                 },
                 {
                     "id": "cnt_003",
                     "title": "How TechCorp Increased MQL-to-SQL by 45%",
-                    "type": "case_study",
-                    "format": "PDF + Video",
-                    "word_count": 2200,
-                    "target_persona": "CMO",
-                    "funnel_stage": "consideration",
-                    "performance": {
-                        "total_views": 2_100,
-                        "avg_time_on_page_sec": 185,
-                        "conversion_rate_pct": 11.3,
-                    },
+                    "type": "case_study", "format": "PDF + Video", "word_count": 2200,
+                    "target_persona": "CMO", "funnel_stage": "consideration",
+                    "performance": {"total_views": 2100, "conversion_rate_pct": 11.3},
                     "url": "https://content.company.com/case-studies/techcorp",
-                    "last_updated": "2026-01-20",
                 },
                 {
                     "id": "cnt_004",
                     "title": "Consideration Stage Email Templates (10-Pack)",
-                    "type": "email_template",
-                    "format": "HTML",
-                    "target_persona": "All",
-                    "funnel_stage": "consideration",
-                    "performance": {
-                        "avg_open_rate_pct": 32.1,
-                        "avg_click_rate_pct": 5.8,
-                    },
+                    "type": "email_template", "format": "HTML",
+                    "target_persona": "All", "funnel_stage": "consideration",
+                    "performance": {"avg_open_rate_pct": 32.1, "avg_click_rate_pct": 5.8},
                     "url": "https://content.company.com/templates/consideration-emails",
-                    "last_updated": "2026-03-10",
                 },
                 {
                     "id": "cnt_005",
                     "title": "Webinar: AI-Powered Personalisation at Scale",
-                    "type": "webinar",
-                    "format": "Recording + Slides",
-                    "duration_minutes": 45,
-                    "target_persona": "Marketing Manager",
-                    "funnel_stage": "consideration",
-                    "performance": {
-                        "registrations": 980,
-                        "attendees": 412,
-                        "meetings_booked": 48,
-                    },
+                    "type": "webinar", "format": "Recording + Slides",
+                    "target_persona": "Marketing Manager", "funnel_stage": "consideration",
+                    "performance": {"registrations": 980, "attendees": 412, "meetings_booked": 48},
                     "url": "https://content.company.com/webinars/ai-personalisation",
-                    "last_updated": "2026-02-28",
                 },
             ],
         }
@@ -298,31 +261,15 @@ def get_case_studies(industry: str) -> str:
                 },
                 {
                     "id": "cs_003",
-                    "title": f"Enterprise Win: GlobalServ ({industry}) Case Study",
+                    "title": f"Enterprise Win: GlobalServ ({industry})",
                     "customer": "GlobalServ Solutions",
-                    "industry": industry,
-                    "company_size": "2,500 employees",
-                    "challenge": (
-                        "Needed to unify marketing efforts across 12 regional "
-                        "teams while maintaining local relevance."
-                    ),
-                    "solution": (
-                        "Deployed centralised campaign intelligence crew with "
-                        "localisation layer for regional adaptation."
-                    ),
-                    "results": {
-                        "campaign_launch_speed_improvement_pct": 60,
-                        "brand_consistency_score_increase": "72 to 94",
-                        "regional_engagement_lift_pct": 28,
-                        "roi_multiple": "3.8x in first year",
-                    },
-                    "customer_quote": (
-                        "For the first time, all 12 regions are running "
-                        "coordinated campaigns without the endless email "
-                        "chains. — Priya Sharma, Global CMO"
-                    ),
+                    "industry": industry, "company_size": "2,500 employees",
+                    "challenge": "Unify marketing across 12 regional teams while maintaining local relevance.",
+                    "solution": "Centralised campaign intelligence crew with localisation layer.",
+                    "results": {"speed_improvement_pct": 60, "consistency_score": "72 to 94",
+                                "engagement_lift_pct": 28, "roi_multiple": "3.8x in first year"},
+                    "customer_quote": "All 12 regions running coordinated campaigns. — Priya Sharma, CMO",
                     "url": "https://company.com/case-studies/globalserv",
-                    "published_date": "2025-11-18",
                 },
             ],
         }
