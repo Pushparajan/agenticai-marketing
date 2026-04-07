@@ -88,161 +88,54 @@ def _print_conversation(result: Any) -> None:
     print()
 
 
+def _print_section(title: str, data: Any) -> None:
+    """Print a single plan section with adaptive formatting."""
+    print(f"\n  {title:^68}")
+    print(f"  {'-' * 68}")
+    if isinstance(data, dict):
+        for key, val in data.items():
+            if isinstance(val, list):
+                print(f"  {key}:")
+                for item in val:
+                    if isinstance(item, dict):
+                        summary = ", ".join(f"{k}: {v}" for k, v in item.items())
+                        print(f"    - {summary}")
+                    else:
+                        print(f"    - {item}")
+            else:
+                print(f"  {key}: {val}")
+    elif isinstance(data, list):
+        for item in data:
+            if isinstance(item, dict):
+                summary = ", ".join(f"{k}: {v}" for k, v in item.items())
+                print(f"  - {summary}")
+            else:
+                print(f"  - {item}")
+    else:
+        print(f"  {data}")
+
+
 def _print_campaign_plan(plan: dict[str, Any]) -> None:
     """Print the extracted campaign plan in a readable format."""
     _print_header("FINAL CAMPAIGN PLAN")
-
-    # Campaign name and objective
     print(f"\n  Campaign:  {plan.get('campaign_name', 'N/A')}")
     print(f"  Objective: {plan.get('objective', 'N/A')}")
 
-    # Market analysis
-    market = plan.get("market_analysis", {})
-    if market:
-        print(f"\n  {'MARKET ANALYSIS':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(market, dict):
-            for key, val in market.items():
-                if isinstance(val, list):
-                    print(f"  {key}:")
-                    for item in val:
-                        print(f"    - {item}")
-                else:
-                    print(f"  {key}: {val}")
-        elif isinstance(market, str):
-            for line in market.split("\n"):
-                print(f"  {line}")
-
-    # Competitive landscape
-    comp = plan.get("competitive_landscape", {})
-    if comp:
-        print(f"\n  {'COMPETITIVE LANDSCAPE':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(comp, dict):
-            for key, val in comp.items():
-                if isinstance(val, list):
-                    print(f"  {key}:")
-                    for item in val:
-                        if isinstance(item, dict):
-                            for k, v in item.items():
-                                print(f"    {k}: {v}")
-                            print()
-                        else:
-                            print(f"    - {item}")
-                else:
-                    print(f"  {key}: {val}")
-        elif isinstance(comp, str):
-            for line in comp.split("\n"):
-                print(f"  {line}")
-
-    # Target audience
-    audience = plan.get("target_audience", {})
-    if audience:
-        print(f"\n  {'TARGET AUDIENCE':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(audience, dict):
-            for key, val in audience.items():
-                print(f"  {key}: {val}")
-        elif isinstance(audience, (str, list)):
-            items = audience if isinstance(audience, list) else [audience]
-            for item in items:
-                print(f"  - {item}")
-
-    # Channels
-    channels = plan.get("channels", {})
-    if channels:
-        print(f"\n  {'CHANNEL MIX':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(channels, dict):
-            for ch_name, ch_detail in channels.items():
-                if isinstance(ch_detail, dict):
-                    alloc = ch_detail.get("allocation_pct", ch_detail.get("pct", ""))
-                    spend = ch_detail.get("spend_usd", ch_detail.get("budget", ""))
-                    print(f"  {ch_name:<30} {alloc}%   ${spend}")
-                else:
-                    print(f"  {ch_name}: {ch_detail}")
-        elif isinstance(channels, list):
-            for ch in channels:
-                print(f"  - {ch}")
-
-    # Budget
-    budget = plan.get("budget", {})
-    if budget:
-        print(f"\n  {'BUDGET':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(budget, dict):
-            for key, val in budget.items():
-                print(f"  {key}: {val}")
-        else:
-            print(f"  {budget}")
-
-    # ROI projection
-    roi = plan.get("roi_projection", {})
-    if roi:
-        print(f"\n  {'ROI PROJECTION':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(roi, dict):
-            for key, val in roi.items():
-                print(f"  {key}: {val}")
-        else:
-            print(f"  {roi}")
-
-    # Timeline
-    timeline = plan.get("timeline", {})
-    if timeline:
-        print(f"\n  {'TIMELINE':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(timeline, dict):
-            for phase, detail in timeline.items():
-                print(f"  {phase}: {detail}")
-        elif isinstance(timeline, list):
-            for phase in timeline:
-                if isinstance(phase, dict):
-                    label = phase.get("phase", phase.get("name", ""))
-                    desc = phase.get("description", phase.get("activities", ""))
-                    print(f"  {label}: {desc}")
-                else:
-                    print(f"  - {phase}")
-        else:
-            print(f"  {timeline}")
-
-    # KPIs
-    kpis = plan.get("kpis", {})
-    if kpis:
-        print(f"\n  {'KEY PERFORMANCE INDICATORS':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(kpis, dict):
-            for metric, target in kpis.items():
-                print(f"  {metric}: {target}")
-        elif isinstance(kpis, list):
-            for kpi in kpis:
-                if isinstance(kpi, dict):
-                    name = kpi.get("metric", kpi.get("name", ""))
-                    target = kpi.get("target", kpi.get("value", ""))
-                    print(f"  {name}: {target}")
-                else:
-                    print(f"  - {kpi}")
-
-    # Brand safety
-    safety = plan.get("brand_safety_review", {})
-    if safety:
-        print(f"\n  {'BRAND SAFETY REVIEW':^68}")
-        print(f"  {'-' * 68}")
-        if isinstance(safety, dict):
-            verdict = safety.get("verdict", safety.get("status", "N/A"))
-            print(f"  Verdict: {verdict}")
-            issues = safety.get("issues", safety.get("findings", []))
-            if issues:
-                print("  Issues:")
-                for issue in issues:
-                    print(f"    - {issue}")
-            recs = safety.get("recommendations", [])
-            if recs:
-                print("  Recommendations:")
-                for rec in recs:
-                    print(f"    - {rec}")
-        else:
-            print(f"  {safety}")
+    sections = [
+        ("MARKET ANALYSIS", "market_analysis"),
+        ("COMPETITIVE LANDSCAPE", "competitive_landscape"),
+        ("TARGET AUDIENCE", "target_audience"),
+        ("CHANNEL MIX", "channels"),
+        ("BUDGET", "budget"),
+        ("ROI PROJECTION", "roi_projection"),
+        ("TIMELINE", "timeline"),
+        ("KEY PERFORMANCE INDICATORS", "kpis"),
+        ("BRAND SAFETY REVIEW", "brand_safety_review"),
+    ]
+    for title, key in sections:
+        data = plan.get(key)
+        if data:
+            _print_section(title, data)
 
     print()
 

@@ -6,13 +6,9 @@
 
 """Brand safety, guideline checking, and regulatory compliance tools.
 
-Provides rule-based content review against brand guidelines (tone,
-terminology, claims) and regulatory compliance checks (GDPR, CAN-SPAM,
-FTC, SEC, etc.).  Returns structured pass/fail verdicts with specific
-issues and remediation guidance.
-
-Environment variables consumed (via .env):
-    USE_MOCK  - "true" (default) or "false"
+Rule-based content review against brand guidelines and regulatory
+compliance checks (GDPR, CAN-SPAM, FTC, SEC).  Returns structured
+pass/fail verdicts with specific issues and remediation guidance.
 """
 
 from __future__ import annotations
@@ -126,10 +122,6 @@ _REGULATION_RULES: dict[str, list[dict[str, str]]] = {
 def check_brand_guidelines(content: str) -> str:
     """Check content against brand guidelines for tone, terminology, and claims.
 
-    Evaluates the content against banned terms, tone rules, and
-    superlative claim restrictions.  Returns a structured verdict with
-    specific issues and remediation suggestions.
-
     Args:
         content: The marketing content to check (plain text or light HTML).
 
@@ -163,18 +155,11 @@ def check_brand_guidelines(content: str) -> str:
                 "issue": rule["issue"],
             })
 
-    # Check content length (brand guideline: headlines < 60 chars)
-    lines = content.strip().split("\n")
-    first_line = lines[0].strip() if lines else ""
+    # Check opening line length (brand guideline: headlines < 60 chars)
+    first_line = content.strip().split("\n")[0].strip()
     if len(first_line) > 120:
-        issues.append({
-            "category": "formatting",
-            "severity": "low",
-            "issue": (
-                f"Opening line is {len(first_line)} characters — "
-                "brand guidelines recommend headlines under 60 characters."
-            ),
-        })
+        issues.append({"category": "formatting", "severity": "low",
+                        "issue": f"Opening line is {len(first_line)} chars — aim for under 60."})
 
     # Determine verdict
     critical_count = sum(1 for i in issues if i["severity"] in ("critical", "high"))
@@ -214,14 +199,9 @@ def check_brand_guidelines(content: str) -> str:
 def review_compliance(content: str, regulations: str = "gdpr,ftc,can_spam") -> str:
     """Review content against regulatory compliance requirements.
 
-    Checks the content against rules for specified regulations (GDPR,
-    CAN-SPAM, FTC, SEC, etc.) and returns a structured verdict with
-    specific violations and remediation guidance.
-
     Args:
         content:     The marketing content to review (plain text or HTML).
-        regulations: Comma-separated list of regulation sets to check,
-                     e.g. "gdpr,ftc,can_spam,sec".
+        regulations: Comma-separated regulation sets, e.g. "gdpr,ftc,can_spam,sec".
 
     Returns:
         JSON string with compliance pass/fail verdict and violation details.
@@ -301,28 +281,16 @@ def review_compliance(content: str, regulations: str = "gdpr,ftc,can_spam") -> s
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("Campaign Intelligence Room — Brand Safety Tools Demo")
-    print("=" * 60)
-    print(f"\nUSE_MOCK = {USE_MOCK}\n")
-
-    sample_good = (
-        "Discover how our platform helps enterprise teams reduce "
-        "time-to-value by 40% with AI-powered onboarding. "
-        "Start your free trial today."
+    print("=" * 60, "\nBrand Safety Tools Demo\n", "=" * 60)
+    _ok = "Discover how our platform helps enterprise teams reduce time-to-value by 40%."
+    _bad = (
+        "GUARANTEED RESULTS!! Our revolutionary #1 BEST IN CLASS solution will "
+        "CRUSH THE COMPETITION. We track personal data without consent for 10x ROI. "
+        "ACT NOW — cheapest deal ever!"
     )
-    sample_bad = (
-        "GUARANTEED RESULTS!! Our revolutionary platform is the #1 "
-        "BEST IN CLASS solution that will CRUSH THE COMPETITION. "
-        "We track personal data without consent to deliver 10x ROI. "
-        "ACT NOW — this is the cheapest deal you will ever find!"
-    )
-
-    print("--- Brand Guidelines: Clean Content ---")
-    print(check_brand_guidelines(sample_good))
-
-    print("\n--- Brand Guidelines: Problematic Content ---")
-    print(check_brand_guidelines(sample_bad))
-
-    print("\n--- Compliance Review: Problematic Content (GDPR, FTC) ---")
-    print(review_compliance(sample_bad, "gdpr,ftc"))
+    print("--- Clean Content ---")
+    print(check_brand_guidelines(_ok))
+    print("\n--- Problematic Content ---")
+    print(check_brand_guidelines(_bad))
+    print("\n--- Compliance (GDPR, FTC) ---")
+    print(review_compliance(_bad, "gdpr,ftc"))

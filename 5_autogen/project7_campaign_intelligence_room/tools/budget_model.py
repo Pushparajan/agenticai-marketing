@@ -6,13 +6,9 @@
 
 """Budget modelling and ROI projection tools.
 
-Provides campaign budget forecasting with channel-level breakdowns and
-ROI projections based on spend, cost-per-lead, and conversion
-assumptions.  Each function returns deterministic mock data when
-USE_MOCK is true (the default) or when no external API is configured.
-
-Environment variables consumed (via .env):
-    USE_MOCK  - "true" (default) or "false"
+Campaign budget forecasting with channel-level breakdowns and ROI
+projections based on spend, cost-per-lead, and conversion assumptions.
+Returns deterministic mock data when USE_MOCK is true (the default).
 """
 
 from __future__ import annotations
@@ -54,41 +50,29 @@ _BUDGET_TEMPLATES: dict[str, dict[str, Any]] = {
         "campaign_type": "Pipeline Generation",
         "recommended_channels": {
             "linkedin_ads": {
-                "pct_of_budget": 30,
-                "rationale": "High-intent targeting via matched audiences and InMail",
-                "expected_cpl_usd": 185,
-                "expected_ctr_pct": 0.45,
+                "pct_of_budget": 30, "rationale": "High-intent targeting via matched audiences",
+                "expected_cpl_usd": 185, "expected_ctr_pct": 0.45,
             },
             "google_search": {
-                "pct_of_budget": 25,
-                "rationale": "Capture bottom-funnel demand with branded + category keywords",
-                "expected_cpl_usd": 120,
-                "expected_ctr_pct": 3.2,
+                "pct_of_budget": 25, "rationale": "Bottom-funnel demand with category keywords",
+                "expected_cpl_usd": 120, "expected_ctr_pct": 3.2,
             },
             "content_syndication": {
-                "pct_of_budget": 20,
-                "rationale": "Gated asset distribution to ICP-matched audiences",
-                "expected_cpl_usd": 95,
-                "expected_ctr_pct": 1.1,
+                "pct_of_budget": 20, "rationale": "Gated asset distribution to ICP audiences",
+                "expected_cpl_usd": 95, "expected_ctr_pct": 1.1,
             },
             "webinars_events": {
-                "pct_of_budget": 15,
-                "rationale": "Thought-leadership events for mid-funnel engagement",
-                "expected_cpl_usd": 250,
-                "expected_ctr_pct": None,
+                "pct_of_budget": 15, "rationale": "Thought-leadership for mid-funnel engagement",
+                "expected_cpl_usd": 250, "expected_ctr_pct": None,
             },
             "abm_direct_mail": {
-                "pct_of_budget": 10,
-                "rationale": "Personalized gifting for target account decision-makers",
-                "expected_cpl_usd": 400,
-                "expected_ctr_pct": None,
+                "pct_of_budget": 10, "rationale": "Personalized gifting for decision-makers",
+                "expected_cpl_usd": 400, "expected_ctr_pct": None,
             },
         },
         "benchmarks": {
-            "avg_deal_size_usd": 48_000,
-            "avg_sales_cycle_days": 90,
-            "lead_to_opportunity_pct": 12,
-            "opportunity_to_close_pct": 22,
+            "avg_deal_size_usd": 48_000, "avg_sales_cycle_days": 90,
+            "lead_to_opportunity_pct": 12, "opportunity_to_close_pct": 22,
         },
     },
     "brand_awareness": {
@@ -155,15 +139,9 @@ def forecast_budget(
 ) -> str:
     """Forecast a campaign budget with channel-level breakdowns.
 
-    Generates a budget model based on the campaign type, desired channels,
-    and campaign duration.  Returns per-channel spend allocations,
-    expected cost-per-lead, and performance benchmarks.
-
     Args:
-        campaign_type: Type of campaign, e.g. "pipeline", "brand_awareness",
-                       "product_launch".
-        channels:      Comma-separated list of preferred channels,
-                       e.g. "linkedin_ads,google_search,content_syndication".
+        campaign_type: E.g. "pipeline", "brand_awareness", "product_launch".
+        channels:      Comma-separated channels, e.g. "linkedin_ads,google_search".
         duration_days: Campaign duration in days (default 90).
 
     Returns:
@@ -176,19 +154,15 @@ def forecast_budget(
 
     # Normalise campaign type key
     normalized_type = campaign_type.lower().replace(" ", "_").replace("-", "_")
-    alias_map: dict[str, str] = {
-        "pipeline": "pipeline",
-        "pipeline_generation": "pipeline",
-        "demand_gen": "pipeline",
-        "demand_generation": "pipeline",
-        "brand": "brand_awareness",
-        "brand_awareness": "brand_awareness",
+    _type_aliases: dict[str, str] = {
+        "pipeline": "pipeline", "pipeline_generation": "pipeline",
+        "demand_gen": "pipeline", "demand_generation": "pipeline",
+        "brand": "brand_awareness", "brand_awareness": "brand_awareness",
         "awareness": "brand_awareness",
-        "launch": "product_launch",
-        "product_launch": "product_launch",
+        "launch": "product_launch", "product_launch": "product_launch",
         "product": "product_launch",
     }
-    type_key = alias_map.get(normalized_type, "pipeline")
+    type_key = _type_aliases.get(normalized_type, "pipeline")
     template = _BUDGET_TEMPLATES.get(type_key, _BUDGET_TEMPLATES["pipeline"])
 
     # Parse requested channels
@@ -199,33 +173,24 @@ def forecast_budget(
     ]
 
     # Build budget model
-    base_daily_spend_usd = 550  # baseline for pipeline
-    if type_key == "brand_awareness":
-        base_daily_spend_usd = 400
-    elif type_key == "product_launch":
-        base_daily_spend_usd = 750
+    _daily_rates = {"pipeline": 550, "brand_awareness": 400, "product_launch": 750}
+    base_daily_spend_usd = _daily_rates.get(type_key, 550)
 
     total_budget_usd = base_daily_spend_usd * duration_days
     channel_data = template["recommended_channels"]
 
-    # If requested channels match template, use those; otherwise use all
+    # Select and allocate channels
     active_channels: dict[str, Any] = {}
     for ch_name, ch_detail in channel_data.items():
         if not requested_channels or ch_name in requested_channels:
-            allocated = round(total_budget_usd * ch_detail["pct_of_budget"] / 100, 2)
-            active_channels[ch_name] = {
-                **ch_detail,
-                "allocated_usd": allocated,
-            }
-
-    # Rebalance if only a subset of channels selected
+            alloc = round(total_budget_usd * ch_detail["pct_of_budget"] / 100, 2)
+            active_channels[ch_name] = {**ch_detail, "allocated_usd": alloc}
+    # Rebalance when only a subset is selected
     if active_channels and len(active_channels) < len(channel_data):
         total_pct = sum(ch["pct_of_budget"] for ch in active_channels.values())
         for ch in active_channels.values():
             ch["pct_of_budget"] = round(ch["pct_of_budget"] / total_pct * 100, 1)
-            ch["allocated_usd"] = round(
-                total_budget_usd * ch["pct_of_budget"] / 100, 2
-            )
+            ch["allocated_usd"] = round(total_budget_usd * ch["pct_of_budget"] / 100, 2)
 
     result: dict[str, Any] = {
         "campaign_type": template["campaign_type"],
@@ -237,12 +202,7 @@ def forecast_budget(
         "assumptions": {
             "currency": "USD",
             "pricing_model": "blended CPL / CPM estimates",
-            "seasonality_adjustment": "none applied — adjust for Q4 surcharges",
-            "note": (
-                "Forecasts are based on industry median benchmarks. "
-                "Actual performance will vary based on targeting quality, "
-                "creative effectiveness, and competitive intensity."
-            ),
+            "note": "Based on industry median benchmarks; adjust for seasonality.",
         },
         "forecasted_at": _ts(),
     }
@@ -259,17 +219,12 @@ def calculate_roi_projection(
     expected_cpl: float,
     conversion_rate: float,
 ) -> str:
-    """Project return-on-investment for a campaign spend scenario.
-
-    Calculates leads generated, expected conversions, projected revenue,
-    and ROI ratio based on spend, cost-per-lead, and conversion rate
-    assumptions.
+    """Project ROI for a campaign spend scenario.
 
     Args:
         spend:           Total campaign spend in USD.
         expected_cpl:    Expected cost per lead in USD.
-        conversion_rate: Lead-to-customer conversion rate as a percentage
-                         (e.g. 2.5 for 2.5%).
+        conversion_rate: Lead-to-customer conversion rate as pct (e.g. 2.5).
 
     Returns:
         JSON string with ROI projection model.
@@ -293,57 +248,32 @@ def calculate_roi_projection(
     projected_revenue = customers_acquired * avg_deal_size_usd
     roi_ratio = (projected_revenue - spend) / spend if spend > 0 else 0.0
 
-    # Build scenario table with sensitivity ranges
+    # Build sensitivity scenarios (pessimistic / base / optimistic)
     scenarios: list[dict[str, Any]] = []
-    for label, cpl_mult, conv_mult in [
-        ("pessimistic", 1.35, 0.65),
-        ("base", 1.0, 1.0),
-        ("optimistic", 0.75, 1.40),
-    ]:
-        s_cpl = expected_cpl * cpl_mult
-        s_conv = conversion_rate * conv_mult
+    for label, cpl_m, conv_m in [("pessimistic", 1.35, 0.65), ("base", 1.0, 1.0), ("optimistic", 0.75, 1.40)]:
+        s_cpl, s_conv = expected_cpl * cpl_m, conversion_rate * conv_m
         s_leads = int(spend / s_cpl)
-        s_customers = int(s_leads * (s_conv / 100))
-        s_revenue = s_customers * avg_deal_size_usd
-        s_roi = (s_revenue - spend) / spend if spend > 0 else 0.0
-        scenarios.append({
-            "scenario": label,
-            "adjusted_cpl_usd": round(s_cpl, 2),
-            "adjusted_conversion_pct": round(s_conv, 2),
-            "leads": s_leads,
-            "customers": s_customers,
-            "projected_revenue_usd": round(s_revenue, 2),
-            "roi_ratio": round(s_roi, 2),
-        })
+        s_cust = int(s_leads * (s_conv / 100))
+        s_rev = s_cust * avg_deal_size_usd
+        s_roi = (s_rev - spend) / spend if spend > 0 else 0.0
+        scenarios.append({"scenario": label, "adjusted_cpl_usd": round(s_cpl, 2),
+                          "adjusted_conversion_pct": round(s_conv, 2), "leads": s_leads,
+                          "customers": s_cust, "projected_revenue_usd": round(s_rev, 2),
+                          "roi_ratio": round(s_roi, 2)})
 
+    payback = round(spend / (projected_revenue / 12), 1) if projected_revenue > 0 else None
     result: dict[str, Any] = {
-        "inputs": {
-            "spend_usd": round(spend, 2),
-            "expected_cpl_usd": round(expected_cpl, 2),
-            "conversion_rate_pct": round(conversion_rate, 2),
-        },
+        "inputs": {"spend_usd": round(spend, 2), "expected_cpl_usd": round(expected_cpl, 2),
+                   "conversion_rate_pct": round(conversion_rate, 2)},
         "base_projection": {
-            "leads_generated": leads_generated,
-            "customers_acquired": customers_acquired,
+            "leads_generated": leads_generated, "customers_acquired": customers_acquired,
             "avg_deal_size_usd": avg_deal_size_usd,
             "projected_revenue_usd": round(projected_revenue, 2),
-            "roi_ratio": round(roi_ratio, 2),
-            "roi_pct": round(roi_ratio * 100, 1),
-            "payback_period_months": (
-                round(spend / (projected_revenue / 12), 1)
-                if projected_revenue > 0
-                else None
-            ),
+            "roi_ratio": round(roi_ratio, 2), "roi_pct": round(roi_ratio * 100, 1),
+            "payback_period_months": payback,
         },
         "sensitivity_analysis": scenarios,
-        "assumptions": {
-            "avg_deal_size_source": "Company median ACV (last 4 quarters)",
-            "note": (
-                "ROI projection does not account for sales team costs, "
-                "opportunity-stage discounting, or multi-touch attribution. "
-                "Use as a directional planning estimate."
-            ),
-        },
+        "assumptions": {"note": "Does not account for sales costs or multi-touch attribution."},
         "projected_at": _ts(),
     }
 
@@ -363,7 +293,6 @@ if __name__ == "__main__":
     print("Campaign Intelligence Room — Budget Model Tools Demo")
     print("=" * 60)
     print(f"\nUSE_MOCK = {USE_MOCK}\n")
-
     print("--- Budget Forecast: Pipeline Campaign ---")
     print(forecast_budget("pipeline", "linkedin_ads,google_search", 90))
 
