@@ -4,51 +4,41 @@
 
 1. Go to [developers.hubspot.com](https://developers.hubspot.com)
 2. Sign up for a free developer account
-3. Create a test portal (sandbox) — this gives you a full HubSpot instance with no cost
+3. Create a test portal (sandbox)
 
 ## Step 2: Create a Private App
 
-1. In your test portal, go to **Settings → Integrations → Private Apps**
-2. Click **Create a private app**
-3. Name it `AgenticAI Book`
-4. Under **Scopes**, enable:
-   - `crm.objects.contacts.read`
-   - `crm.objects.contacts.write`
-   - `crm.objects.deals.read`
-   - `crm.objects.deals.write`
+1. **Settings → Integrations → Private Apps**
+2. Click **Create a private app**, name it `AgenticAI Journey`
+3. Enable scopes:
+   - `crm.objects.contacts.read` / `.write`
+   - `crm.objects.deals.read` / `.write`
    - `crm.objects.companies.read`
-   - `automation` (for workflow access)
-5. Click **Create app** and copy the access token
+   - `automation`
+4. Copy the access token
 
 ## Step 3: Add to .env
 
 ```bash
 HUBSPOT_API_KEY=pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+HUBSPOT_PORTAL_ID=12345678
 ```
 
-## Step 4: Seed Test Data
+## Step 4: Configure Webhooks (Optional)
 
-The sandbox comes with sample contacts, but you can add more:
+For the Stage 1 webhook receiver (`stage1_awareness/project_demand_gen/webhook_receiver.py`):
 
-```python
-from hubspot import HubSpot
-client = HubSpot(access_token="your-token")
-client.crm.contacts.basic_api.create(
-    simple_public_object_input_for_create={
-        "properties": {
-            "email": "test@example.com",
-            "firstname": "Test",
-            "lastname": "Contact",
-            "company": "Acme Corp"
-        }
-    }
-)
-```
+1. **Settings → Integrations → Webhooks**
+2. Set target URL to your FastAPI endpoint
+3. Subscribe to `contact.creation` and `contact.propertyChange`
+4. Set your HMAC secret in `.env` as `WEBHOOK_SECRET`
 
-## Projects Using HubSpot
+## Stages Using HubSpot
 
-- Project 1: Customer Journey Digital Twin (read contact history)
-- Project 2: SDR Outreach Agent (create tasks, update contacts)
-- Project 4: Demand Gen Pipeline (activate workflows)
-- Project 5: Journey Orchestrator (lifecycle stage updates)
-- Project 8: Command Centre (full CRM server)
+- Stage 1: Awareness (create contacts, score intent)
+- Stage 2: Consideration (lifecycle stage updates)
+- Stage 3: Decision (deal management, task creation)
+- Stage 4: Onboarding (onboarding tasks)
+- Stage 5: Retention (contract data, expansion tracking)
+- Stage 6: Advocacy (advocate identification)
+- Capstone: All of the above via MCP CRM server

@@ -2,49 +2,41 @@
 
 ## Overview
 
-The capstone project (Chapter 8) uses 6 MCP (Model Context Protocol) servers, each wrapping a marketing platform:
+Six MCP servers expose the full marketing stack for the capstone and advanced stages:
 
-| Server | File | Tools Exposed |
-|--------|------|---------------|
-| CRM | `servers/crm_server.py` | 8 HubSpot tools |
-| CDP | `servers/cdp_server.py` | 8 Segment tools |
-| Email | `servers/email_server.py` | 8 Klaviyo tools |
-| Paid Media | `servers/paid_media_server.py` | 8 Google Ads tools |
-| Analytics | `servers/analytics_server.py` | 6 Amplitude tools |
-| Content | `servers/content_server.py` | 6 Contentful tools |
+| Server | Platform | Tools | Used By |
+|--------|----------|-------|---------|
+| `crm_server.py` | HubSpot | 8 | All stages |
+| `cdp_server.py` | Segment | 8 | Awareness, Retention |
+| `email_server.py` | Klaviyo | 8 | Consideration, Decision |
+| `paid_media_server.py` | Google Ads | 8 | Awareness |
+| `analytics_server.py` | Amplitude | 8 | All stages |
+| `advocacy_server.py` | G2/Capterra | 8 | Advocacy |
 
 ## Running a Server
 
 ```bash
-cd 6_mcp/servers
+cd mcp_servers
 python crm_server.py
 ```
 
-Each server runs on stdio transport by default (designed for MCP client integration).
+Servers use stdio transport by default (designed for MCP client integration).
 
-## Testing with MCP Inspector
+## Testing
 
 ```bash
-# Install MCP inspector
 pip install mcp
-
-# Inspect available tools
-mcp inspect 6_mcp/servers/crm_server.py
+mcp inspect mcp_servers/crm_server.py
 ```
-
-## Using in the Capstone Project
-
-The `mcp_client.py` in `project8_command_centre/` connects to all 6 servers and exposes their tools to the LangGraph agents. See the capstone project README for the full architecture.
 
 ## Mock Mode
 
-All servers check for `USE_MOCK_APIS=true` and return realistic marketing data. You can run and test every server without real API credentials.
+All servers return realistic marketing data when `USE_MOCK_APIS=true`. No real API credentials needed.
 
-## Adding Custom Servers
+## Configuration
 
-To add your own MCP server:
+See `mcp_servers/server_config.yaml` for server names, descriptions, and tool listings.
 
-1. Create a new file in `servers/`
-2. Use the `mcp` SDK to define tools
-3. Each tool should have real + mock implementations
-4. Register the server in `project8_command_centre/mcp_client.py`
+## Using in the Capstone
+
+The `capstone_command_centre/mcp_client.py` connects to all 6 servers and exposes tools to LangGraph agents.

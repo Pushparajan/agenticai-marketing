@@ -3,13 +3,12 @@
 ## Step 1: Create a Free Account
 
 1. Go to [klaviyo.com](https://www.klaviyo.com) and sign up
-2. The free tier supports up to 250 contacts — perfect for testing
+2. Free tier supports up to 250 contacts
 
 ## Step 2: Generate an API Key
 
-1. Go to **Settings → API Keys**
-2. Create a new **Private API Key**
-3. Enable these scopes:
+1. **Settings → API Keys**
+2. Create a **Private API Key** with scopes:
    - Profiles (read/write)
    - Flows (read/write)
    - Campaigns (read/write)
@@ -20,16 +19,19 @@
 
 ```bash
 KLAVIYO_API_KEY=pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+KLAVIYO_LIST_ID_CONSIDERATION=abc123
+KLAVIYO_LIST_ID_ONBOARDING=def456
 ```
 
-## Step 4: Create a Test List
+## Step 4: Create Test Lists
 
-1. Go to **Audience → Lists & Segments**
-2. Create a list called `Book Test List`
-3. Add a few test profiles manually or via the API
+1. **Audience → Lists & Segments**
+2. Create: `Consideration Nurture` and `Onboarding Welcome`
+3. Add the list IDs to your `.env`
 
-## Projects Using Klaviyo
+## Stages Using Klaviyo
 
-- Project 4: Demand Gen Pipeline (create flows, enrol contacts)
-- Project 5: Journey Orchestrator (send emails via Klaviyo)
-- Project 8: Command Centre (email MCP server)
+- Stage 1: Awareness (nurture enrolment)
+- Stage 2: Consideration (flow creation, contact enrolment)
+- Stage 3: Decision (close offer emails, urgency campaigns)
+- Capstone: All via MCP email server

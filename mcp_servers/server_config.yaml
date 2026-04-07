@@ -1,0 +1,103 @@
+# File      : server_config.yaml
+# Stage     : All Stages
+# Chapter   : 13-14
+# Framework : MCP
+# Author    : Pushparajan Ramar
+# Repo      : https://github.com/Pushparajan/agenticai-marketing
+
+servers:
+  crm_server:
+    name: "CRM MCP Server"
+    description: "HubSpot CRM integration for contact, deal, and journey management"
+    port: 5100
+    platform: "HubSpot"
+    stages: ["Awareness", "Consideration", "Decision", "Onboarding", "Retention", "Advocacy"]
+    tools:
+      - get_contact
+      - update_lifecycle_stage
+      - create_contact
+      - log_journey_event
+      - get_deal
+      - update_deal_stage
+      - create_task
+      - bulk_export_contacts
+
+  cdp_server:
+    name: "CDP MCP Server"
+    description: "Segment CDP integration for audience intelligence and identity resolution"
+    port: 5101
+    platform: "Segment"
+    stages: ["Awareness", "Retention"]
+    tools:
+      - get_contact_events
+      - compute_intent_score
+      - get_audience_segment
+      - get_journey_stage
+      - identify_churn_risk_cohort
+      - get_ltv_prediction
+      - merge_identity_graph
+      - export_segment
+
+  email_server:
+    name: "Email MCP Server"
+    description: "Klaviyo email automation for flows, A/B testing, and send optimisation"
+    port: 5102
+    platform: "Klaviyo"
+    stages: ["Consideration", "Decision"]
+    tools:
+      - get_flow_performance
+      - create_flow
+      - enrol_contact
+      - pause_flow
+      - get_ab_test_results
+      - get_send_metrics
+      - optimise_send_time
+      - clone_template
+
+  paid_media_server:
+    name: "Paid Media MCP Server"
+    description: "Google Ads integration for campaign management and audience targeting"
+    port: 5103
+    platform: "Google Ads"
+    stages: ["Awareness"]
+    tools:
+      - get_campaign_performance
+      - adjust_bid
+      - create_audience
+      - pause_campaign
+      - get_roas
+      - allocate_budget
+      - get_keyword_intent_data
+      - create_retargeting_list
+
+  analytics_server:
+    name: "Analytics MCP Server"
+    description: "Amplitude analytics for funnel metrics, attribution, and cohort analysis"
+    port: 5104
+    platform: "Amplitude"
+    stages: ["Awareness", "Consideration", "Decision", "Onboarding", "Retention", "Advocacy"]
+    tools:
+      - get_funnel_metrics
+      - get_stage_conversion_rates
+      - get_attribution_report
+      - get_cohort_retention
+      - get_revenue_attribution
+      - get_ltv_by_segment
+      - query_custom_event
+      - get_time_to_value
+
+  advocacy_server:
+    name: "Advocacy MCP Server"
+    description: "G2/Capterra integration for reviews, referrals, and advocate management"
+    port: 5105
+    platform: "G2/Capterra"
+    stages: ["Advocacy"]
+    tools:
+      - identify_advocates
+      - request_g2_review
+      - request_capterra_review
+      - trigger_referral_programme
+      - invite_to_community
+      - request_case_study
+      - get_nps_distribution
+      - get_referral_pipeline

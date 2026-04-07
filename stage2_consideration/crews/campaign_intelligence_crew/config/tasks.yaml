@@ -1,0 +1,78 @@
+# File      : tasks.yaml
+# Stage     : 2 — Consideration
+# Chapter   : 5–6
+# Framework : CrewAI
+# Author    : Pushparajan Ramar
+# Repo      : https://github.com/Pushparajan/agenticai-marketing
+
+research_task:
+  description: >
+    Perform comprehensive research on {company} in the {industry} industry.
+
+    Deliverables:
+    1. Company overview — size, funding stage, headquarters, key executives.
+    2. Technology stack — identify tools and platforms they currently use.
+    3. Recent news — last 90 days of press releases, blog posts, or funding.
+    4. Industry benchmarks — engagement rates, conversion benchmarks for
+       {industry} companies using {channels}.
+    5. Competitor landscape — top 3 competitors and their positioning.
+
+    Use web search, LinkedIn company lookup, industry benchmark databases,
+    and tech-stack signal tools. Flag confidence level (high/medium/low) for
+    each data point.
+  expected_output: >
+    A structured research brief in JSON format with sections for
+    company_overview, tech_stack, recent_news, industry_benchmarks,
+    and competitor_landscape. Each section includes data points with
+    confidence levels.
+  agent: market_researcher
+
+strategy_task:
+  description: >
+    Using the research brief from the previous task, design a multi-channel
+    nurture strategy for {company} across these channels: {channels}.
+
+    Deliverables:
+    1. Audience segmentation — define 2–3 micro-segments within the account.
+    2. Content map — match content assets (emails, case studies, webinars,
+       whitepapers) to each segment and journey stage.
+    3. Sequence timeline — define a 21-day nurture cadence with send days,
+       channels, and content for each touch.
+    4. Branching logic — specify what happens on open, click, no-engagement.
+    5. KPI targets — engagement rate, click rate, meeting-booked rate.
+
+    Query the CDP for existing journey events and segment membership to
+    avoid redundant touches and personalise sequencing.
+  expected_output: >
+    A structured nurture strategy in JSON format with sections for
+    segments, content_map, sequence_timeline (array of touch objects),
+    branching_logic, and kpi_targets.
+  agent: nurture_strategist
+  context:
+    - research_task
+
+copy_task:
+  description: >
+    Using the research brief and nurture strategy, write conversion-ready
+    copy for each touch in the nurture sequence for {company}.
+
+    Deliverables:
+    1. Email copy — subject line, preview text, body, CTA for each email.
+    2. LinkedIn messages — connection request note + 2 follow-up messages.
+    3. Webinar invitation — title, description, speaker bio placeholder,
+       registration CTA.
+    4. Content recommendations — select 3 existing assets from the content
+       library and write custom intro paragraphs for each.
+
+    Ground every piece in the research findings. Use competitor intelligence
+    to sharpen differentiation. Include A/B variants for the first email
+    subject line.
+  expected_output: >
+    A structured copy package in JSON format with sections for emails
+    (array), linkedin_messages (array), webinar_invitation (object),
+    and content_recommendations (array). Each email includes subject_line,
+    subject_line_variant, preview_text, body_html, and cta.
+  agent: conversion_copywriter
+  context:
+    - research_task
+    - strategy_task
